@@ -7,6 +7,6 @@ RUN apt-get update \
        apache2 \
     && rm -rf /var/lib/apt/lists/* /var/www/html/index.html
 
-COPY index.html /var/www/html/index.html
+COPY index.html estilos.css /var/www/html/
 
 CMD ["apache2ctl", "-D", "FOREGROUND"]
