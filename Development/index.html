@@ -2,10 +2,48 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Sistema de Tutorías</title>
+  <title>Sistema de Tutorías - UPSLP</title>
+  <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-  <h1>Sistema de Tutorías</h1>
-  <p>Contenedor Ubuntu 24.04 + Apache2</p>
+
+  <div class="encabezado">
+    <h1>UNIVERSIDAD POLITÉCNICA DE SAN LUIS POTOSÍ</h1>
+    <h2>SISTEMA DE TUTORÍAS</h2>
+    <h3>MATERIA DE SISTEMAS VIRTUALES</h3>
+  </div>
+
+  <div class="contenedor">
+    <h4>Registrar Tutoría</h4>
+    <form action="#" method="POST">
+      <label>Nombre del alumno:</label>
+      <input type="text" name="nombre_alumno" required>
+
+      <label>Matrícula:</label>
+      <input type="text" name="matricula" required>
+
+      <label>Nombre del tutor:</label>
+      <input type="text" name="nombre_tutor" required>
+
+      <label>Correo electrónico del alumno:</label>
+      <input type="email" name="correo_alumno" required>
+
+      <button type="submit">Guardar</button>
+    </form>
+
+    <h4>Registros</h4>
+    <table>
+      <tr>
+        <th>Nombre del alumno</th>
+        <th>Matrícula</th>
+        <th>Nombre del tutor</th>
+        <th>Correo</th>
+      </tr>
+      <tr>
+        <td colspan="4">Sin registros todavia</td>
+      </tr>
+    </table>
+  </div>
+
 </body>
 </html>
