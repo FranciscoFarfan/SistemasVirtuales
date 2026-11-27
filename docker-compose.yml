@@ -4,4 +4,12 @@ services:
     container_name: proyecto-web
     ports:
       - "10085:80"
-
+    volumes:
+      - ./AppData:/var/lib/mysql
+    environment:
+      DB_HOST: 127.0.0.1
+      DB_NAME: sistema_tutorias
+      DB_USER: app_user
+      DB_PASS: AppPass2026!
+      ADMIN_USER: admin
+      ADMIN_PASS: Admin2026!
