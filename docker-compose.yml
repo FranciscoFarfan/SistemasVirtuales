@@ -1,10 +1,7 @@
-
 services:
-  alpine:
-    image: alpine:latest
-    container_name: alpine
-    restart: unless-stopped
-    stdin_open: true
-    tty: true
-    command: sh
+  web:
+    build: ./Development
+    container_name: proyecto-web
+    ports:
+      - "10085:80"
 
