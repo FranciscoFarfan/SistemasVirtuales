@@ -17,5 +17,10 @@ CREATE TABLE IF NOT EXISTS alumnos (
     carrera VARCHAR(100) NOT NULL,
     semestre INT NOT NULL,
     correo VARCHAR(120) DEFAULT NULL,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creado_por INT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modificado_por INT DEFAULT NULL,
+    modificado_en TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id),
+    FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
