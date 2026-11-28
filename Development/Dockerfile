@@ -14,10 +14,10 @@ RUN apt-get update \
 
 RUN sed -i 's/DirectoryIndex index.html/DirectoryIndex index.php index.html/' /etc/apache2/mods-enabled/dir.conf
 
-COPY index.html estilos.css /var/www/html/
+COPY *.php estilos.css /var/www/html/
 
 RUN mkdir -p /docker-init
-COPY init.sql migrar_v1.sql /docker-init/
+COPY init.sql /docker-init/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

@@ -1,3 +1,4 @@
+#!/bin/sh
 set -e
 
 if [ ! -d /var/lib/mysql/mysql ]; then
@@ -22,9 +23,7 @@ for i in $(seq 1 30); do
     sleep 1
 done
 
-if [ ! -d "/var/lib/mysql/${DB_NAME}" ]; then
-    echo ">> Creando base de datos y usuario de la aplicación..."
-fi
+echo ">> Creando base de datos y usuario de la aplicación (si no existen)..."
 mysql -u root <<SQL
 CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
@@ -34,19 +33,9 @@ GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
 
-consulta() { mysql -u root -N -B "${DB_NAME}" -e "$1"; }
-ES_V1=$(consulta "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='${DB_NAME}' AND TABLE_NAME='alumnos' AND COLUMN_NAME='nombre_alumno'")
-if [ "$ES_V1" = "1" ]; then
-    echo ">> Datos de la versión 1 encontrados: se respaldan en la tabla alumnos_v1"
-    consulta "RENAME TABLE alumnos TO alumnos_v1"
-fi
-
 mysql -u root "${DB_NAME}" < /docker-init/init.sql
 
-if [ "$ES_V1" = "1" ]; then
-    echo ">> Migrando alumnos de la versión 1 con nombres y apellidos separados..."
-    mysql -u root "${DB_NAME}" < /docker-init/migrar_v1.sql
-fi
+consulta() { mysql -u root -N -B "${DB_NAME}" -e "$1"; }
 
 USUARIOS=$(consulta "SELECT COUNT(*) FROM usuarios")
 if [ "$USUARIOS" = "0" ]; then
@@ -64,7 +53,7 @@ apagar() {
     mysqladmin -u root shutdown 2>/dev/null || true
     exit 0
 }
-trap apagar SIGTERM SIGINT
+trap apagar TERM INT
 
 echo ">> Sistema de Tutorías listo en http://localhost:10085"
 

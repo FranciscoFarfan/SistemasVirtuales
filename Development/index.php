@@ -175,7 +175,3 @@ $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
 </body>
 </html>
-  </div>
-
-</body>
-</html>
