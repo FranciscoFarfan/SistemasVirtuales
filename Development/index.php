@@ -88,90 +88,127 @@ $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestión de Tutorías</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 30px; background: #f4f4f9; }
-        .caja { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input { padding: 8px; margin: 5px 0 15px 0; width: 100%; box-sizing: border-box; }
-        button { padding: 10px 15px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #0056b3; color: white; }
-        .alerta { padding: 10px; background: #d4edda; color: #155724; margin-bottom: 15px; border-radius: 4px; }
-    </style>
+    <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
+    <header class="site-header">
+        <a class="brand" href="index.php">
+            <img class="brand-logo" src="https://www.upslp.edu.mx/Ingreso/ReferenciaBancaria2O24SEDI/_img/logo.png" alt="Logotipo de la Universidad Politécnica de San Luis Potosí">
+            <span class="brand-copy">
+                <strong>Sistema de Tutorías</strong>
+                <span>Universidad Politécnica de San Luis Potosí</span>
+            </span>
+        </a>
+        <div class="header-user">
+            <span>Sesión: <strong><?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?></strong></span>
+            <a href="logout.php">Cerrar sesión</a>
+        </div>
+    </header>
 
-    <div class="caja">
-        <p>Usuario activo: <strong><?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?></strong> | <a href="logout.php">Cerrar sesión</a></p>
+    <main class="page-shell">
+        <div class="page-intro">
+            <h1>Gestión de alumnos</h1>
+            <p>Registra, consulta y administra la información de tutorías.</p>
+        </div>
+
         <?php if ($mensaje): ?>
-            <div class="alerta"><?= htmlspecialchars($mensaje) ?></div>
+            <div class="alerta" role="status"><?= htmlspecialchars($mensaje) ?></div>
         <?php endif; ?>
 
-        <h3><?= $editando ? 'Editar Alumno' : 'Registrar Nuevo Alumno' ?></h3>
-        <form method="POST" action="index.php">
-            <input type="hidden" name="id" value="<?= $editando['id'] ?? '' ?>">
+        <div class="dashboard-grid">
+            <section class="card">
+                <div class="card-body">
+                    <h2 class="card-heading"><?= $editando ? 'Editar alumno' : 'Registrar alumno' ?></h2>
+                    <p class="card-description">Los campos con * son obligatorios.</p>
+                    <form method="POST" action="index.php">
+                        <input type="hidden" name="id" value="<?= $editando['id'] ?? '' ?>">
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="matricula">Matrícula *</label>
+                                <input id="matricula" type="text" name="matricula" required value="<?= htmlspecialchars($editando['matricula'] ?? '') ?>" placeholder="Ej. 20240001">
+                            </div>
+                            <div class="field">
+                                <label for="nombre">Nombre(s) *</label>
+                                <input id="nombre" type="text" name="nombre" required value="<?= htmlspecialchars($editando['nombre'] ?? '') ?>" placeholder="Nombre(s)">
+                            </div>
+                            <div class="field">
+                                <label for="apellido_paterno">Apellido paterno *</label>
+                                <input id="apellido_paterno" type="text" name="apellido_paterno" required value="<?= htmlspecialchars($editando['apellido_paterno'] ?? '') ?>" placeholder="Apellido paterno">
+                            </div>
+                            <div class="field">
+                                <label for="apellido_materno">Apellido materno</label>
+                                <input id="apellido_materno" type="text" name="apellido_materno" value="<?= htmlspecialchars($editando['apellido_materno'] ?? '') ?>" placeholder="Apellido materno">
+                            </div>
+                            <div class="field">
+                                <label for="carrera">Carrera *</label>
+                                <input id="carrera" type="text" name="carrera" required value="<?= htmlspecialchars($editando['carrera'] ?? '') ?>" placeholder="Nombre de la carrera">
+                            </div>
+                            <div class="field">
+                                <label for="semestre">Semestre *</label>
+                                <input id="semestre" type="number" name="semestre" min="1" max="15" required value="<?= htmlspecialchars($editando['semestre'] ?? '') ?>" placeholder="1–15">
+                            </div>
+                            <div class="field">
+                                <label for="correo">Correo</label>
+                                <input id="correo" type="email" name="correo" value="<?= htmlspecialchars($editando['correo'] ?? '') ?>" placeholder="alumno@ejemplo.edu.mx">
+                            </div>
+                        </div>
+                        <div class="button-row">
+                            <button class="button" type="submit"><?= $editando ? 'Guardar cambios' : 'Registrar alumno' ?></button>
+                            <?php if ($editando): ?>
+                                <a class="button button-secondary" href="index.php">Cancelar</a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
+            </section>
 
-            <label>Matrícula *</label>
-            <input type="text" name="matricula" required value="<?= htmlspecialchars($editando['matricula'] ?? '') ?>">
-
-            <label>Nombre(s) *</label>
-            <input type="text" name="nombre" required value="<?= htmlspecialchars($editando['nombre'] ?? '') ?>">
-
-            <label>Apellido Paterno *</label>
-            <input type="text" name="apellido_paterno" required value="<?= htmlspecialchars($editando['apellido_paterno'] ?? '') ?>">
-
-            <label>Apellido Materno</label>
-            <input type="text" name="apellido_materno" value="<?= htmlspecialchars($editando['apellido_materno'] ?? '') ?>">
-
-            <label>Carrera *</label>
-            <input type="text" name="carrera" required value="<?= htmlspecialchars($editando['carrera'] ?? '') ?>">
-
-            <label>Semestre *</label>
-            <input type="number" name="semestre" min="1" max="15" required value="<?= htmlspecialchars($editando['semestre'] ?? '') ?>">
-
-            <label>Correo</label>
-            <input type="email" name="correo" value="<?= htmlspecialchars($editando['correo'] ?? '') ?>">
-
-            <button type="submit"><?= $editando ? 'Actualizar' : 'Guardar' ?></button>
-            <?php if ($editando): ?>
-                <a href="index.php" style="margin-left: 10px;">Cancelar</a>
-            <?php endif; ?>
-        </form>
-    </div>
-
-    <div class="caja">
-        <h3>Alumnos Registrados</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Matrícula</th>
-                    <th>Nombre Completo</th>
-                    <th>Carrera / Semestre</th>
-                    <th>Correo</th>
-                    <th>Registrado por</th>
-                    <th>Última edición por</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($alumnos as $a): ?>
-                <tr>
-                    <td><?= htmlspecialchars($a['matricula']) ?></td>
-                    <td><?= htmlspecialchars($a['nombre'] . ' ' . $a['apellido_paterno'] . ' ' . $a['apellido_materno']) ?></td>
-                    <td><?= htmlspecialchars($a['carrera']) ?> (<?= $a['semestre'] ?>°)</td>
-                    <td><?= htmlspecialchars($a['correo'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($a['creador'] ?? 'Desconocido') ?></td>
-                    <td><?= $a['editor'] ? htmlspecialchars($a['editor']) . ' (' . $a['modificado_en'] . ')' : 'Sin editar' ?></td>
-                    <td>
-                        <a href="index.php?editar=<?= $a['id'] ?>">Editar</a> | 
-                        <a href="index.php?eliminar=<?= $a['id'] ?>" onclick="return confirm('¿Seguro que deseas eliminar este registro?')">Eliminar</a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-
+            <section class="card table-card">
+                <div class="table-heading">
+                    <div>
+                        <h2 class="card-heading">Alumnos registrados</h2>
+                        <p class="card-description">Listado de alumnos en el sistema.</p>
+                    </div>
+                    <span class="count-badge"><?= count($alumnos) ?> registro<?= count($alumnos) === 1 ? '' : 's' ?></span>
+                </div>
+                <?php if ($alumnos): ?>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Matrícula</th>
+                                    <th>Alumno</th>
+                                    <th>Carrera / semestre</th>
+                                    <th>Correo</th>
+                                    <th>Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($alumnos as $a): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($a['matricula']) ?></td>
+                                    <td><span class="student-name"><?= htmlspecialchars(trim($a['nombre'] . ' ' . $a['apellido_paterno'] . ' ' . ($a['apellido_materno'] ?? ''))) ?></span></td>
+                                    <td><?= htmlspecialchars($a['carrera']) ?><span class="student-meta"><?= (int)$a['semestre'] ?>° semestre</span></td>
+                                    <td><?= htmlspecialchars($a['correo'] ?? '-') ?></td>
+                                    <td><?= htmlspecialchars($a['creador'] ?? 'Desconocido') ?><span class="student-meta"><?= $a['editor'] ? 'Editó: ' . htmlspecialchars($a['editor']) : 'Sin editar' ?></span></td>
+                                    <td>
+                                        <div class="actions">
+                                            <a href="index.php?editar=<?= (int)$a['id'] ?>">Editar</a>
+                                            <a class="delete-link" href="index.php?eliminar=<?= (int)$a['id'] ?>" onclick="return confirm('¿Seguro que deseas eliminar este registro?')">Eliminar</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="empty-state">Aún no hay alumnos registrados. Usa el formulario para agregar el primero.</div>
+                <?php endif; ?>
+            </section>
+        </div>
+    </main>
 </body>
 </html>
