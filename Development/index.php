@@ -10,6 +10,7 @@ if (!isset($_SESSION['usuario_id'])) {
 
 $usuario_id = $_SESSION['usuario_id'];
 $mensaje = '';
+$tipoMensaje = 'ok'; // 'ok' o 'error'
 $editando = null;
 
 //funcion para eliminar alumno
@@ -63,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } catch (PDOException $e) {
+        $tipoMensaje = 'error';
         $mensaje = "Error al guardar (verifica que la matrícula no esté repetida): " . $e->getMessage();
     }
 }
@@ -82,6 +84,17 @@ $sql = "SELECT a.*,
         LEFT JOIN usuarios u2 ON a.modificado_por = u2.id
         ORDER BY a.id DESC";
 $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+//datos para el resumen y las iniciales
+function iniciales($texto) {
+    $partes = preg_split('/\s+/', trim($texto));
+    $letras = mb_substr($partes[0] ?? '', 0, 1) . mb_substr($partes[1] ?? '', 0, 1);
+    return mb_strtoupper($letras) ?: '?';
+}
+$totalAlumnos  = count($alumnos);
+$totalCarreras = count(array_unique(array_map(fn($a) => mb_strtolower(trim($a['carrera'])), $alumnos)));
+$ultimo        = $alumnos[0] ?? null;
+$nombreSesion  = $_SESSION['usuario_nombre'] ?? 'Admin';
 ?>
 
 <!DOCTYPE html>
@@ -90,20 +103,26 @@ $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestión de Tutorías</title>
-    <link rel="stylesheet" href="estilos.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="estilos.css?v=20261128b">
 </head>
 <body>
     <header class="site-header">
         <a class="brand" href="index.php">
-            <img class="brand-logo" src="https://www.upslp.edu.mx/Ingreso/ReferenciaBancaria2O24SEDI/_img/logo.png" alt="Logotipo de la Universidad Politécnica de San Luis Potosí">
+            <img class="brand-logo" src="https://www.upslp.edu.mx/Ingreso/ReferenciaBancaria2O24SEDI/_img/logo.png" alt="Logotipo de la Universidad Politécnica de San Luis Potosí" width="150" height="58">
             <span class="brand-copy">
                 <strong>Sistema de Tutorías</strong>
                 <span>Universidad Politécnica de San Luis Potosí</span>
             </span>
         </a>
         <div class="header-user">
-            <span>Sesión: <strong><?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?></strong></span>
-            <a href="logout.php">Cerrar sesión</a>
+            <div class="user-chip">
+                <span class="user-avatar" aria-hidden="true"><?= htmlspecialchars(iniciales($nombreSesion)) ?></span>
+                <span class="user-text"><small>Sesión iniciada</small><strong><?= htmlspecialchars($nombreSesion) ?></strong></span>
+            </div>
+            <a class="logout-link" href="logout.php">Cerrar sesión</a>
         </div>
     </header>
 
@@ -114,42 +133,51 @@ $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <?php if ($mensaje): ?>
-            <div class="alerta" role="status"><?= htmlspecialchars($mensaje) ?></div>
+            <div class="alerta <?= $tipoMensaje === 'error' ? 'alerta-error' : '' ?>" role="<?= $tipoMensaje === 'error' ? 'alert' : 'status' ?>">
+                <p><?= htmlspecialchars($mensaje) ?></p>
+                <button type="button" class="alerta-cerrar" aria-label="Cerrar mensaje" onclick="this.parentElement.remove()">&times;</button>
+            </div>
         <?php endif; ?>
 
+        <div class="stats">
+            <div class="stat"><span>Alumnos registrados</span><strong><?= $totalAlumnos ?></strong></div>
+            <div class="stat"><span>Carreras</span><strong><?= $totalCarreras ?></strong></div>
+            <div class="stat"><span>Último registro</span><strong><?= $ultimo ? htmlspecialchars($ultimo['nombre'] . ' ' . $ultimo['apellido_paterno']) : '—' ?></strong></div>
+        </div>
+
         <div class="dashboard-grid">
-            <section class="card">
+            <section class="card form-card <?= $editando ? 'is-editing' : '' ?>">
                 <div class="card-body">
                     <h2 class="card-heading"><?= $editando ? 'Editar alumno' : 'Registrar alumno' ?></h2>
-                    <p class="card-description">Los campos con * son obligatorios.</p>
+                    <p class="card-description"><?= $editando ? 'Modifica los datos y guarda los cambios.' : 'Los campos con * son obligatorios.' ?></p>
                     <form method="POST" action="index.php">
                         <input type="hidden" name="id" value="<?= $editando['id'] ?? '' ?>">
                         <div class="form-grid">
-                            <div class="field">
-                                <label for="matricula">Matrícula *</label>
+                            <div class="field full">
+                                <label for="matricula">Matrícula <span class="req">*</span></label>
                                 <input id="matricula" type="text" name="matricula" required value="<?= htmlspecialchars($editando['matricula'] ?? '') ?>" placeholder="Ej. 20240001">
                             </div>
-                            <div class="field">
-                                <label for="nombre">Nombre(s) *</label>
+                            <div class="field full">
+                                <label for="nombre">Nombre(s) <span class="req">*</span></label>
                                 <input id="nombre" type="text" name="nombre" required value="<?= htmlspecialchars($editando['nombre'] ?? '') ?>" placeholder="Nombre(s)">
                             </div>
                             <div class="field">
-                                <label for="apellido_paterno">Apellido paterno *</label>
-                                <input id="apellido_paterno" type="text" name="apellido_paterno" required value="<?= htmlspecialchars($editando['apellido_paterno'] ?? '') ?>" placeholder="Apellido paterno">
+                                <label for="apellido_paterno">Apellido paterno <span class="req">*</span></label>
+                                <input id="apellido_paterno" type="text" name="apellido_paterno" required value="<?= htmlspecialchars($editando['apellido_paterno'] ?? '') ?>">
                             </div>
                             <div class="field">
                                 <label for="apellido_materno">Apellido materno</label>
-                                <input id="apellido_materno" type="text" name="apellido_materno" value="<?= htmlspecialchars($editando['apellido_materno'] ?? '') ?>" placeholder="Apellido materno">
+                                <input id="apellido_materno" type="text" name="apellido_materno" value="<?= htmlspecialchars($editando['apellido_materno'] ?? '') ?>">
                             </div>
-                            <div class="field">
-                                <label for="carrera">Carrera *</label>
+                            <div class="field full">
+                                <label for="carrera">Carrera <span class="req">*</span></label>
                                 <input id="carrera" type="text" name="carrera" required value="<?= htmlspecialchars($editando['carrera'] ?? '') ?>" placeholder="Nombre de la carrera">
                             </div>
                             <div class="field">
-                                <label for="semestre">Semestre *</label>
+                                <label for="semestre">Semestre <span class="req">*</span></label>
                                 <input id="semestre" type="number" name="semestre" min="1" max="15" required value="<?= htmlspecialchars($editando['semestre'] ?? '') ?>" placeholder="1–15">
                             </div>
-                            <div class="field">
+                            <div class="field full">
                                 <label for="correo">Correo</label>
                                 <input id="correo" type="email" name="correo" value="<?= htmlspecialchars($editando['correo'] ?? '') ?>" placeholder="alumno@ejemplo.edu.mx">
                             </div>
@@ -170,32 +198,47 @@ $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                         <h2 class="card-heading">Alumnos registrados</h2>
                         <p class="card-description">Listado de alumnos en el sistema.</p>
                     </div>
-                    <span class="count-badge"><?= count($alumnos) ?> registro<?= count($alumnos) === 1 ? '' : 's' ?></span>
+                    <div class="table-tools">
+                        <?php if ($alumnos): ?>
+                        <div class="search">
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13 13 4 4"/></svg>
+                            <input id="buscador" type="search" placeholder="Buscar por nombre, matrícula o carrera" aria-label="Buscar alumnos">
+                        </div>
+                        <?php endif; ?>
+                        <span class="count-badge" id="contador"><?= $totalAlumnos ?> registro<?= $totalAlumnos === 1 ? '' : 's' ?></span>
+                    </div>
                 </div>
                 <?php if ($alumnos): ?>
                     <div class="table-wrap">
-                        <table>
+                        <table id="tabla-alumnos">
                             <thead>
                                 <tr>
                                     <th>Matrícula</th>
                                     <th>Alumno</th>
-                                    <th>Carrera / semestre</th>
+                                    <th>Carrera</th>
                                     <th>Correo</th>
                                     <th>Registro</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($alumnos as $a): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($a['matricula']) ?></td>
-                                    <td><span class="student-name"><?= htmlspecialchars(trim($a['nombre'] . ' ' . $a['apellido_paterno'] . ' ' . ($a['apellido_materno'] ?? ''))) ?></span></td>
-                                    <td><?= htmlspecialchars($a['carrera']) ?><span class="student-meta"><?= (int)$a['semestre'] ?>° semestre</span></td>
+                                <?php foreach ($alumnos as $a):
+                                    $nombreCompleto = trim($a['nombre'] . ' ' . $a['apellido_paterno'] . ' ' . ($a['apellido_materno'] ?? ''));
+                                ?>
+                                <tr class="<?= ($editando && (int)$editando['id'] === (int)$a['id']) ? 'is-editing' : '' ?>">
+                                    <td class="matricula"><?= htmlspecialchars($a['matricula']) ?></td>
+                                    <td>
+                                        <div class="student">
+                                            <span class="avatar" aria-hidden="true"><?= htmlspecialchars(iniciales($a['nombre'] . ' ' . $a['apellido_paterno'])) ?></span>
+                                            <span class="student-name"><?= htmlspecialchars($nombreCompleto) ?></span>
+                                        </div>
+                                    </td>
+                                    <td><?= htmlspecialchars($a['carrera']) ?><br><span class="semester-pill"><?= (int)$a['semestre'] ?>° semestre</span></td>
                                     <td><?= htmlspecialchars($a['correo'] ?? '-') ?></td>
                                     <td><?= htmlspecialchars($a['creador'] ?? 'Desconocido') ?><span class="student-meta"><?= $a['editor'] ? 'Editó: ' . htmlspecialchars($a['editor']) : 'Sin editar' ?></span></td>
                                     <td>
                                         <div class="actions">
-                                            <a href="index.php?editar=<?= (int)$a['id'] ?>">Editar</a>
+                                            <a class="edit-link" href="index.php?editar=<?= (int)$a['id'] ?>">Editar</a>
                                             <a class="delete-link" href="index.php?eliminar=<?= (int)$a['id'] ?>" onclick="return confirm('¿Seguro que deseas eliminar este registro?')">Eliminar</a>
                                         </div>
                                     </td>
@@ -204,11 +247,42 @@ $alumnos = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                             </tbody>
                         </table>
                     </div>
+                    <div class="empty-state no-results" id="sin-resultados">
+                        <strong>Sin coincidencias</strong>
+                        Prueba con otro nombre, matrícula o carrera.
+                    </div>
                 <?php else: ?>
-                    <div class="empty-state">Aún no hay alumnos registrados. Usa el formulario para agregar el primero.</div>
+                    <div class="empty-state">
+                        <strong>Aún no hay alumnos registrados</strong>
+                        Usa el formulario para agregar el primero.
+                    </div>
                 <?php endif; ?>
             </section>
         </div>
     </main>
+
+    <footer class="site-footer">Universidad Politécnica de San Luis Potosí · Sistema de Tutorías</footer>
+
+    <script>
+    // Buscador de la tabla (filtra en el navegador)
+    (function () {
+        var input = document.getElementById('buscador');
+        if (!input) return;
+        var filas = document.querySelectorAll('#tabla-alumnos tbody tr');
+        var contador = document.getElementById('contador');
+        var vacio = document.getElementById('sin-resultados');
+        var norm = function (t) { return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+        input.addEventListener('input', function () {
+            var q = norm(input.value.trim()), visibles = 0;
+            filas.forEach(function (f) {
+                var ok = norm(f.textContent).indexOf(q) !== -1;
+                f.style.display = ok ? '' : 'none';
+                if (ok) visibles++;
+            });
+            contador.textContent = visibles + (visibles === 1 ? ' registro' : ' registros');
+            vacio.classList.toggle('visible', visibles === 0);
+        });
+    })();
+    </script>
 </body>
 </html>
